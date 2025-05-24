@@ -86,5 +86,23 @@ def tasks():
     logs = export_logs()
     return render_template("task_table.html", logs=logs)
 
+@app.route("/api/execute_task", methods=["POST"])
+def execute_task():
+    from datetime import datetime
+    data = request.get_json()
+    task_name = data.get("task", "").strip()
+
+    if task_name == "任務B":
+        today = datetime.today()
+        weekday = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"][today.weekday()]
+        result = f"✅ 任務B：今天是 {weekday} {today.strftime('%Y-%m-%d')}"
+    elif task_name == "任務C":
+        result = "✅ 任務C：模擬完成資料上傳"
+    else:
+        result = f"⚠️ 尚未支援的任務：「{task_name}」"
+
+    return jsonify({"result": result})
+
+
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, render_template, request, send_file
 from firestore_utils_lazy_env import (
     get_all_keywords, get_all_descriptions,
     update_keywords, update_description,
@@ -86,4 +86,5 @@ def tasks():
     logs = export_logs()
     return render_template("task_table.html", logs=logs)
 
-
+if __name__ == "__main__":
+    app.run(debug=True)

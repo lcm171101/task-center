@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file
+from flask import Flask, jsonify, render_template, request, send_file
 from firestore_utils_lazy_env import (
     get_all_keywords, get_all_descriptions,
     update_keywords, update_description,
@@ -87,26 +87,3 @@ def tasks():
     return render_template("task_table.html", logs=logs)
 
 
-@app.route("/api/execute_task", methods=["POST"])
-def execute_task():
-    import importlib
-    data = request.get_json()
-    task_name = data.get("task", "").strip()
-
-    try:
-        if not task_name or not task_name.startswith("任務"):
-            raise ValueError("指令格式錯誤，請以『任務X』命名")
-
-        task_code = task_name[-1].lower()
-        module = importlib.import_module(f"tasks.task_{task_code}")
-        result = module.run(event=data)
-    except ModuleNotFoundError:
-        result = f"⚠️ 任務『{task_name}』尚未建立模組（tasks/task_{task_name[-1].lower()}.py）"
-    except Exception as e:
-        result = f"❌ 任務『{task_name}』執行失敗：{e}"
-
-    return jsonify({"result": result})
-
-
-if __name__ == "__main__":
-    app.run(debug=True)

@@ -86,20 +86,24 @@ def tasks():
     logs = export_logs()
     return render_template("task_table.html", logs=logs)
 
+
 @app.route("/api/execute_task", methods=["POST"])
 def execute_task():
-    from datetime import datetime
+    import importlib
     data = request.get_json()
     task_name = data.get("task", "").strip()
 
-    if task_name == "任務B":
-        today = datetime.today()
-        weekday = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"][today.weekday()]
-        result = f"✅ 任務B：今天是 {weekday} {today.strftime('%Y-%m-%d')}"
-    elif task_name == "任務C":
-        result = "✅ 任務C：模擬完成資料上傳"
-    else:
-        result = f"⚠️ 尚未支援的任務：「{task_name}」"
+    try:
+        if not task_name or not task_name.startswith("任務"):
+            raise ValueError("指令格式錯誤，請以『任務X』命名")
+
+        task_code = task_name[-1].lower()
+        module = importlib.import_module(f"tasks.task_{task_code}")
+        result = module.run(event=data)
+    except ModuleNotFoundError:
+        result = f"⚠️ 任務『{task_name}』尚未建立模組（tasks/task_{task_name[-1].lower()}.py）"
+    except Exception as e:
+        result = f"❌ 任務『{task_name}』執行失敗：{e}"
 
     return jsonify({"result": result})
 

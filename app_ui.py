@@ -3,7 +3,7 @@ from firestore_utils_lazy_env import (
     get_all_keywords, get_all_descriptions,
     update_keywords, update_description,
     delete_keywords, delete_description,
-    export_logs
+    export_logs, log_task
 )
 import csv, os
 from datetime import datetime
@@ -70,9 +70,9 @@ def manage():
 
     return render_template("manage.html", all_tasks=all_tasks)
 
-@app.route("/export_logs")
-def export_logs():
-    logs = export_logs()
+@app.route("/export_logs, log_task")
+def export_logs, log_task():
+    logs = export_logs, log_task()
     filename = f"task_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     with open(filename, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["timestamp", "source_type", "source_id", "command", "result"])
@@ -83,8 +83,35 @@ def export_logs():
 
 @app.route("/tasks")
 def tasks():
-    logs = export_logs()
+    logs = export_logs, log_task()
     return render_template("task_table.html", logs=logs)
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+from flask import jsonify
+import importlib
+from datetime import timedelta
+
+@app.route("/api/execute_task", methods=["POST"])
+def execute_task():
+    try:
+        event = request.get_json(force=True)
+        task_name = event.get("task", "")
+        module_name = f"tasks.task_{task_name[-1].lower()}"
+        task_module = importlib.import_module(module_name)
+        result = task_module.run(event)
+
+        log_task({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "task": task_name,
+            "source_id": event.get("source_id"),
+            "source_type": event.get("source_type"),
+            "message": event.get("original_text"),
+            "result": result,
+            "expiry": (datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
+        })
+
+        return jsonify({"result": result})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

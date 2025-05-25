@@ -1,12 +1,13 @@
-from flask import Flask, render_template, request, send_file
+
+from flask import Flask, render_template, request, send_file, jsonify
 from firestore_utils_lazy_env import (
     get_all_keywords, get_all_descriptions,
     update_keywords, update_description,
     delete_keywords, delete_description,
     export_logs, log_task
 )
-import csv, os
-from datetime import datetime
+import csv, os, importlib
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -26,7 +27,6 @@ def edit_description():
     descriptions = get_all_descriptions()
     all_tasks = list(keywords.keys())
     current_description = ""
-
     if request.method == "POST":
         task = request.form["task_name"]
         desc = request.form["description"]
@@ -61,18 +61,16 @@ def manage():
     keywords = get_all_keywords()
     descriptions = get_all_descriptions()
     all_tasks = list(keywords.keys())
-
     if request.method == "POST":
         task = request.form["task_name"]
         delete_keywords(task)
         delete_description(task)
         return render_template("manage.html", all_tasks=get_all_keywords().keys(), message=f"✅ 已刪除任務 {task}")
-
     return render_template("manage.html", all_tasks=all_tasks)
 
-@app.route("/export_logs, log_task")
-def export_logs, log_task():
-    logs = export_logs, log_task()
+@app.route("/export_logs")
+def export_logs_view():
+    logs = export_logs()
     filename = f"task_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     with open(filename, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["timestamp", "source_type", "source_id", "command", "result"])
@@ -83,17 +81,8 @@ def export_logs, log_task():
 
 @app.route("/tasks")
 def tasks():
-    logs = export_logs, log_task()
+    logs = export_logs()
     return render_template("task_table.html", logs=logs)
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
-
-
-from flask import jsonify
-import importlib
-from datetime import timedelta
 
 @app.route("/api/execute_task", methods=["POST"])
 def execute_task():
@@ -103,7 +92,6 @@ def execute_task():
         module_name = f"tasks.task_{task_name[-1].lower()}"
         task_module = importlib.import_module(module_name)
         result = task_module.run(event)
-
         log_task({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "task": task_name,
@@ -113,7 +101,9 @@ def execute_task():
             "result": result,
             "expiry": (datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d")
         })
-
         return jsonify({"result": result})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)

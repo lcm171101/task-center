@@ -1,6 +1,5 @@
 # tasks/task_a.py
-from crawler import get_hot_topics
-import json
+from tasks.crawler import get_hot_topics
 
 def run(event):
     try:

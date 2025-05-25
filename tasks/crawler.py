@@ -2,13 +2,13 @@
 import requests
 from bs4 import BeautifulSoup
 
-def get_google_trends_html():
+def get_google_trends_rss():
     try:
-        url = "https://trends.google.com/trends/trendingsearches/daily?geo=TW"
+        url = "https://trends.google.com/trends/trendingsearches/daily/rss?geo=TW"
         res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-        soup = BeautifulSoup(res.text, "html.parser")
-        titles = soup.select("div.feed-item div.details-top a.title")
-        return [f"Google 熱門：{t.text.strip()}" for t in titles[:4]]
+        soup = BeautifulSoup(res.text, "xml")
+        items = soup.find_all("item")[:4]
+        return [f"Google 熱門：{item.title.text.strip()}" for item in items]
     except Exception as e:
         return [f"[Google Trends 擷取失敗] {e}"]
 
@@ -38,5 +38,5 @@ def get_hot_topics():
     result = []
     result.extend(get_ptt_gossiping())
     result.extend(get_dcard_hot_html())
-    result.extend(get_google_trends_html())
+    result.extend(get_google_trends_rss())
     return result[:10]

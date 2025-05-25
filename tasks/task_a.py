@@ -1,5 +1,10 @@
-def run(event):
-    from datetime import datetime
-    weekday_map = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
-    today = datetime.now()
-    return f"✅ 任務A 執行成功：今天是 {weekday_map[today.weekday()]} {today.strftime('%Y-%m-%d')}"
+# task_a.py
+from crawler import get_hot_topics
+import json
+
+if __name__ == "__main__":
+    try:
+        topics = get_hot_topics()
+        print(json.dumps(topics, ensure_ascii=False))
+    except Exception as e:
+        print(json.dumps(["[task_a 錯誤] 無法擷取熱門話題", str(e)]))

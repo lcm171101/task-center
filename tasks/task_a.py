@@ -1,10 +1,10 @@
-# task_a.py
+# tasks/task_a.py
 from crawler import get_hot_topics
 import json
 
-if __name__ == "__main__":
+def run(event):
     try:
         topics = get_hot_topics()
-        print(json.dumps(topics, ensure_ascii=False))
+        return "\n".join([f"{i+1}. {t}" for i, t in enumerate(topics)])
     except Exception as e:
-        print(json.dumps(["[task_a 錯誤] 無法擷取熱門話題", str(e)]))
+        return f"[task_a 錯誤] 無法擷取熱門話題：{e}"

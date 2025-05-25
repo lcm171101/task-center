@@ -1,25 +1,25 @@
 # tasks/crawler.py
 import requests
 from bs4 import BeautifulSoup
-from pytrends.request import TrendReq
 
-def get_google_trends():
+def get_google_trends_html():
     try:
-        pytrends = TrendReq(hl='zh-TW', tz=540)
-        trending = pytrends.trending_searches(pn='taiwan')  # 修正為 'taiwan'
-        topics = trending[0].tolist()[:4]
-        return [f"Google 熱門：{t}" for t in topics]
+        url = "https://trends.google.com/trends/trendingsearches/daily?geo=TW"
+        res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        soup = BeautifulSoup(res.text, "html.parser")
+        titles = soup.select("div.feed-item div.details-top a.title")
+        return [f"Google 熱門：{t.text.strip()}" for t in titles[:4]]
     except Exception as e:
         return [f"[Google Trends 擷取失敗] {e}"]
 
-def get_dcard_hot():
+def get_dcard_hot_html():
     try:
-        url = "https://www.dcard.tw/service/api/v2/posts?popular=true&limit=10"
+        url = "https://www.dcard.tw/f"
         res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-        if res.status_code != 200:
-            return [f"[Dcard 擷取失敗] 狀態碼 {res.status_code}"]
-        data = res.json()
-        return [f"Dcard 熱門：{item['title']}" for item in data[:3]]
+        soup = BeautifulSoup(res.text, "html.parser")
+        titles = soup.find_all("h2")
+        hot = [t.text.strip() for t in titles if 5 < len(t.text.strip()) < 100]
+        return [f"Dcard 熱門：{t}" for t in hot[:3]]
     except Exception as e:
         return [f"[Dcard 擷取失敗] {e}"]
 
@@ -37,6 +37,6 @@ def get_ptt_gossiping():
 def get_hot_topics():
     result = []
     result.extend(get_ptt_gossiping())
-    result.extend(get_dcard_hot())
-    result.extend(get_google_trends())
+    result.extend(get_dcard_hot_html())
+    result.extend(get_google_trends_html())
     return result[:10]

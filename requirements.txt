@@ -3,3 +3,5 @@ firebase-admin
 gunicorn
 requests
 beautifulsoup4
+pytrends
+pandas
